@@ -1,36 +1,42 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
 const vscode = require('vscode');
+const jsPDF = require('jspdf');
+const { exec } = require('child_process');
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
+let format = 'image';
 
-/**
- * @param {vscode.ExtensionContext} context
- */
-function activate(context) {
-
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "c2a" is now active!');
-
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with  registerCommand
-	// The commandId parameter must match the command field in package.json
-	let disposable = vscode.commands.registerCommand('c2a.helloWorld', function () {
-		// The code you place here will be executed every time your command is executed
-
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from c2a!');
-	});
-
-	context.subscriptions.push(disposable);
-}
-
-// This method is called when your extension is deactivated
-function deactivate() {}
-
-module.exports = {
-	activate,
-	deactivate
-}
+exports.activate = function (context) {
+    //register the command
+    vscode.commands.registerCommand('extension.takeScreenshot', function () {
+        //create a picker for the user to select format
+        let picker = vscode.window.createQuickPick();
+        picker.items = [
+            { label: 'Text', description: 'Select this option to include the output and code in text format.' },
+            { label: 'Image', description: 'Select this option to include the output and code in image format.' }
+        ];
+        //listen for user's selection
+        picker.onDidChangeValue(value => {
+            format = value;
+        });
+        //show the picker
+        picker.show();
+        //check user's selection
+        if (format === 'text') {
+            // Code to include output and code in text format goes here
+        } else if (format === 'image') {
+            // Code to include output and code in image format goes here
+            // Use Lightshot to take a screenshot
+            exec('lightshot.exe -out', (err, stdout, stderr) => {
+                if (err) {
+                    console.log(`Error: ${err}`);
+                    return;
+                }
+                // Get the path of the saved screenshot from the output
+                let screenshotPath = stdout.trim();
+                //create pdf
+                let pdf = new jsPDF();
+                pdf.addImage(screenshotPath, 'PNG', 0, 0);
+                pdf.save('screenshot.pdf');
+            });
+        }
+    });
+};
